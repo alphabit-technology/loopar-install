@@ -1,9 +1,0 @@
-node_modules
-loopar-env
-config
-.idea
-.env.dist
-apps/*
-!apps/loopar
-!apps/library
-public/uploads
