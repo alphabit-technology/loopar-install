@@ -11,8 +11,9 @@
   "license": "ISC",
   "dependencies": {
     "commander": "^12.1.0",
-    "simple-git": "^3.27.0",
-    "pathe": "^1.1.2"
+    "pathe": "^1.1.2",
+    "portfinder": "^1.0.32",
+    "simple-git": "^3.27.0"
   },
   "bin": {
     "my-installer": "./index.js"
