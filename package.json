@@ -1,14 +1,25 @@
 {
   "name": "install-loopar",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "<div align = \"center\">     <img src = \"https://user-images.githubusercontent.com/87505840/196835270-bb77df87-9880-4933-b0ff-289eb54c0202.svg\" height = \"\" width = \"40%\">     <h2>Loopar Framework</h2>",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alphabit-technology/install-loopar.git"
+  },
+  "keywords": [
+    "npm",
+    "package"
+  ],
+  "author": "Alfredo Ramirez <alfredrz2012@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/alphabit-technology/loopar-framework/issues"
+  },
+  "homepage": "https://loopar.io/Doc",
   "dependencies": {
     "commander": "^12.1.0",
     "pathe": "^1.1.2",
@@ -16,6 +27,6 @@
     "simple-git": "^3.27.0"
   },
   "bin": {
-    "my-installer": "./index.js"
+    "my-installer": "index.js"
   }
 }
