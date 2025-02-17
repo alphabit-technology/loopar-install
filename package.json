@@ -1,6 +1,6 @@
 {
-  "name": "install-loopar",
-  "version": "2.0.0",
+  "name": "loopar-env",
+  "version": "2.0.8",
   "description": "<div align = \"center\">     <img src = \"https://user-images.githubusercontent.com/87505840/196835270-bb77df87-9880-4933-b0ff-289eb54c0202.svg\" height = \"\" width = \"40%\">     <h2>Loopar Framework</h2>",
   "main": "index.js",
   "scripts": {
@@ -8,10 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alphabit-technology/install-loopar.git"
+    "url": "git+https://github.com/alphabit-technology/loopar-env.git"
   },
   "keywords": [
     "npm",
+    "node",
+    "loopar",
+    "framework",
+    "yarn",
     "package"
   ],
   "author": "Alfredo Ramirez <alfredrz2012@gmail.com>",
@@ -27,6 +31,6 @@
     "simple-git": "^3.27.0"
   },
   "bin": {
-    "my-installer": "index.js"
+    "loopar": "index.js"
   }
 }

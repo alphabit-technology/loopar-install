@@ -4,13 +4,11 @@
 
 </div>
 
-> ### Loopar is a test framework for building web applications with JavaScript.
-
-
+> ### Loopar is a test framework for building web applications with JavaScript
 
 ### How to Install
-> 
+>
 
 ```bash
-npx install loopar
+sudo npx loopar-env project-name --port 8080
 ```
