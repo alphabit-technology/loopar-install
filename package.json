@@ -1,6 +1,6 @@
 {
-  "name": "loopar-env",
-  "version": "2.0.8",
+  "name": "install-loopar",
+  "version": "1.0.0",
   "description": "<div align = \"center\">     <img src = \"https://user-images.githubusercontent.com/87505840/196835270-bb77df87-9880-4933-b0ff-289eb54c0202.svg\" height = \"\" width = \"40%\">     <h2>Loopar Framework</h2>",
   "main": "index.js",
   "scripts": {
