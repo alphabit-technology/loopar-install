@@ -1,7 +1,16 @@
 #!/usr/bin/env node
 
+/**
+ * looopar-create.js (simplified)
+ *
+ * - Removes --repo and force flags.
+ * - If target folder exists: skip cloning, install deps and start in development.
+ * - If target folder does not exist: clone the DEFAULT_REPO into it, install deps and start in development.
+ *
+ * Comments are in English inside the code.
+ */
+
 const { Command } = require('commander');
-const simpleGit = require('simple-git');
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
@@ -9,63 +18,152 @@ const portfinder = require('portfinder');
 
 const program = new Command();
 
-// Helper to ensure Yarn is installed
+// Default repository to clone when folder doesn't exist.
+// Keep your original default URL here.
+const DEFAULT_REPO = 'https://github.com/alphabit-technology/loopar-framework.git';
+
+/**
+ * runCommand
+ * Run a synchronous shell command and inherit stdio so the user sees output.
+ * envOverride will be merged on top of process.env for cross-platform safety.
+ */
+function runCommand(command, options = {}) {
+  const { cwd = process.cwd(), envOverride = {} } = options;
+  try {
+    execSync(command, {
+      cwd,
+      stdio: 'inherit',
+      env: { ...process.env, ...envOverride },
+    });
+  } catch (err) {
+    throw new Error(`Command failed: "${command}"\n${err.message}`);
+  }
+}
+
+/**
+ * ensureYarn
+ * Make sure Yarn is available. If not, try to install globally via npm.
+ */
 function ensureYarn() {
   try {
     execSync('yarn --version', { stdio: 'ignore' });
     console.log('Yarn is already installed.');
   } catch {
-    console.log('Yarn is not installed. Installing Yarn...');
-    execSync('npm install -g yarn', { stdio: 'inherit' });
+    console.log('Yarn is not installed. Installing Yarn globally via npm...');
+    try {
+      execSync('npm install -g yarn', { stdio: 'inherit' });
+      console.log('Yarn installed.');
+    } catch (err) {
+      throw new Error('Failed to install Yarn. Please install it manually.');
+    }
+  }
+}
+
+/**
+ * gitCliAvailable
+ * Check whether the git CLI is installed.
+ */
+function gitCliAvailable() {
+  try {
+    execSync('git --version', { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * cloneRepo
+ * Use git CLI to clone the repository into targetPath.
+ * `git clone <repo> <target>` will create the target directory.
+ */
+async function cloneRepo(repoUrl, targetPath) {
+  if (!gitCliAvailable()) {
+    throw new Error('git CLI not found. Please install Git to use this script.');
+  }
+
+  try {
+    runCommand(`git clone ${repoUrl} ${targetPath}`);
+  } catch (err) {
+    throw new Error(`git clone failed: ${err.message}`);
   }
 }
 
 program
-  .argument('<folderName>', 'Name of the folder to create')
-  .option('-p, --port <number>', 'Preconfigured port number', '3000') // Default port
+  .argument('<folderName>', 'Name of the folder to create or use if it exists')
+  .option('-p, --port <number>', 'Preconfigured port number', '3000')
+  .option('--skip-install', 'Skip running yarn install (useful for fast tests)')
   .action(async (folderName, options) => {
-    const repoUrl = 'https://github.com/alphabit-technology/loopar-framework.git';
     try {
-      // Step 1: Ensure Yarn is installed
-      ensureYarn();
+      // Step 1: Ensure Yarn is installed (unless user requested skip-install)
+      if (!options.skipInstall) ensureYarn();
 
-      // Step 2: Create the target folder
+      // Resolve target path
       const targetPath = path.resolve(process.cwd(), folderName);
-      if (!fs.existsSync(targetPath)) {
-        fs.mkdirSync(targetPath);
-        console.log(`Folder created: ${folderName}`);
+      const folderExists = fs.existsSync(targetPath);
+
+      if (folderExists) {
+        console.log(`Folder already exists: ${targetPath}. Skipping clone.`);
       } else {
-        console.error(`The folder ${folderName} already exists.`);
-        process.exit(1);
+        // Clone default repo into targetPath
+        console.log(`Folder does not exist. Cloning ${DEFAULT_REPO} into ${targetPath}...`);
+        await cloneRepo(DEFAULT_REPO, targetPath);
       }
 
-      // Step 3: Clone the GitHub repository into the folder
-      console.log(`Cloning ${repoUrl} into ${folderName}...`);
-      await simpleGit().clone(repoUrl, targetPath);
+      // Step 2: Resolve port availability
+      let requestedPort = parseInt(options.port, 10) || 3000;
+      if (Number.isNaN(requestedPort) || requestedPort <= 0) requestedPort = 3000;
+      console.log(`Checking availability for port ${requestedPort}...`);
+      const freePort = await portfinder.getPortPromise({ port: requestedPort });
 
-      // Step 4: Check if the specified port is available
-      let port = parseInt(options.port, 10);
-      console.log(`Checking availability for port ${port}...`);
-      port = await portfinder.getPortPromise({ port });
-
-      if (port !== parseInt(options.port, 10)) {
-        console.log(`Port ${options.port} is already in use. Using port ${port} instead.`);
+      if (freePort !== requestedPort) {
+        console.log(`Port ${requestedPort} is already in use. Using port ${freePort} instead.`);
       } else {
-        console.log(`Port ${options.port} is available.`);
+        console.log(`Port ${requestedPort} is available.`);
       }
 
-      // Step 5: Update the configuration file with the selected port (if applicable)
-      process.env.PORT = port;
+      // Step 3: Install dependencies (unless skipped)
+      if (!options.skipInstall) {
+        console.log('Installing dependencies with yarn...');
+        runCommand('yarn install', { cwd: targetPath });
+      } else {
+        console.log('Skipping dependency installation (--skip-install).');
+      }
 
-      // Step 6: Install project dependencies
-      console.log('Installing dependencies...');
-      execSync('yarn install', { cwd: targetPath, stdio: 'inherit' });
+      // Step 4: Start always in development mode
+      const envForRun = { PORT: String(freePort), NODE_ENV: 'development' };
+      console.log(`Starting in development mode on port ${freePort}...`);
 
-      // Step 7: Run the development server
-      console.log(`Starting the development server on port ${port}...`);
-      execSync(`yarn dev --port ${port}`, { cwd: targetPath, stdio: 'inherit' });
+      // Read package.json to decide how to start
+      const pkgJsonPath = path.join(targetPath, 'package.json');
+      let pkg = null;
+      try {
+        pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8'));
+      } catch {
+        // ignore; fallbacks used below
+      }
+
+      const hasDevScript = pkg && pkg.scripts && typeof pkg.scripts.dev === 'string';
+      const hasStartScript = pkg && pkg.scripts && typeof pkg.scripts.start === 'string';
+
+      if (hasDevScript) {
+        // Preferred: yarn dev --port <port>
+        runCommand(`yarn dev --port ${freePort}`, { cwd: targetPath, envOverride: envForRun });
+      } else {
+        // Fallback: npx vite or yarn start if start happens to run dev server
+        try {
+          runCommand(`npx vite --port ${freePort}`, { cwd: targetPath, envOverride: envForRun });
+        } catch (err) {
+          if (hasStartScript) {
+            console.log('npx vite failed and package.json has "start". Falling back to `yarn start`.');
+            runCommand('yarn start', { cwd: targetPath, envOverride: envForRun });
+          } else {
+            throw new Error('Could not start dev server: no "dev" script and vite invocation failed. Inspect project scripts.');
+          }
+        }
+      }
     } catch (error) {
-      console.error('Error:', error.message);
+      console.error('Error:', error.message || error);
       process.exit(1);
     }
   });

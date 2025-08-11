@@ -10,5 +10,5 @@
 >
 
 ```bash
-sudo npx loopar-env project-name --port 8080
+sudo npx install-loopar project-name --port 8080
 ```
