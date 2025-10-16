@@ -1,13 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * looopar-create.js (simplified)
- *
- * - Removes --repo and force flags.
- * - If target folder exists: skip cloning, install deps and start in development.
- * - If target folder does not exist: clone the DEFAULT_REPO into it, install deps and start in development.
- *
- * Comments are in English inside the code.
+ * looopar-install.js
  */
 
 const { Command } = require('commander');
